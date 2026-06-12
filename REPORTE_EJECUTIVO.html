@@ -1,0 +1,190 @@
+<!DOCTYPE html><html><head><meta charset='utf-8'><style>
+body{font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:760px;margin:40px auto;color:#1a1a2e;line-height:1.55;font-size:13px}
+h1{font-size:24px;border-bottom:3px solid #d4a843;padding-bottom:8px}
+h2{font-size:18px;color:#16213e;margin-top:28px;border-left:4px solid #d4a843;padding-left:10px}
+h3{font-size:14px;color:#16213e}
+table{border-collapse:collapse;width:100%;margin:12px 0}
+th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}
+th{background:#16213e;color:#fff}
+tr:nth-child(even){background:#f4f4f8}
+blockquote{border-left:3px solid #d4a843;margin-left:0;padding-left:14px;color:#555}
+hr{border:none;border-top:1px solid #ddd;margin:24px 0}
+strong{color:#16213e}
+@media print{ h2{page-break-after:avoid} table{page-break-inside:avoid} }
+</style></head><body><h1>Predicción de Churn de Clientes — Reporte Ejecutivo</h1>
+<p><strong>Para:</strong> Gerencia Comercial
+<strong>Materia:</strong> Inteligencia Artificial Aplicada a Negocios — 1er Cuatrimestre 2026
+<strong>Dataset:</strong> 5.630 clientes de e-commerce, 20 variables</p>
+<hr />
+<h2>1. El problema en una página</h2>
+<p>De nuestros <strong>5.630 clientes, 948 (16,8%) dejaron de comprar</strong>. Adquirir un cliente nuevo cuesta entre 5 y 25 veces más que retener uno existente: cada punto de churn que recuperamos va directo a la rentabilidad.</p>
+<p>La pregunta que respondimos: <strong>¿podemos saber quién está por irse antes de que se vaya, y por qué?</strong></p>
+<p>La respuesta es sí. Construimos un sistema que, probado sobre 1.126 clientes que nunca había visto, <strong>detectó a 183 de los 190 que efectivamente se fueron (96%)</strong>, con solo 12 falsas alarmas. Esto significa que el equipo comercial puede trabajar con una lista corta y confiable de clientes en riesgo, en lugar de hacer campañas masivas a ciegas.</p>
+<p><strong>Las tres conclusiones más importantes para el negocio:</strong></p>
+<ol>
+<li><strong>El churn es un problema de los primeros 30 días.</strong> Más de la mitad de los clientes con un mes o menos de antigüedad se va. Pasado el año, casi nadie se va.</li>
+<li><strong>La encuesta de satisfacción no sirve para anticipar el churn</strong> — los datos muestran lo contrario de lo esperado: los que puntúan 5 se van <em>más</em> que los que puntúan 1.</li>
+<li><strong>Quien reclama se va casi 3 veces más.</strong> Cada reclamo sin resolver es una alerta roja accionable.</li>
+</ol>
+<hr />
+<h2>2. Qué encontramos en los datos (5 hipótesis puestas a prueba)</h2>
+<p>Antes de construir el modelo planteamos 5 hipótesis de negocio y las validamos con los datos. Dos resultaron <strong>falsas</strong>, y eso vale más que las confirmadas: nos evita gastar plata en acciones que no funcionan.</p>
+<h3>✅ H1 — Los clientes nuevos se van mucho más (CONFIRMADA)</h3>
+<table>
+<thead>
+<tr>
+<th>Antigüedad</th>
+<th>Tasa de churn</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–1 mes</td>
+<td><strong>51,8%</strong></td>
+</tr>
+<tr>
+<td>2–6 meses</td>
+<td>8,0%</td>
+</tr>
+<tr>
+<td>7–12 meses</td>
+<td>5,7%</td>
+</tr>
+<tr>
+<td>13–24 meses</td>
+<td>6,5%</td>
+</tr>
+<tr>
+<td>Más de 2 años</td>
+<td><strong>0,0%</strong></td>
+</tr>
+</tbody>
+</table>
+<p>La mitad de los clientes nuevos se va en el primer mes; ningún cliente con más de 2 años se fue. La antigüedad mediana de los que se van es 1 mes, contra 10 meses de los que se quedan (diferencia estadísticamente contundente, p &lt; 0,001).</p>
+<p><strong>Decisión que habilita:</strong> el presupuesto de retención rinde más invertido en <em>onboarding</em> (primeros 30–60 días) que repartido en toda la base.</p>
+<h3>✅ H2 — Quien reclama se va casi 3 veces más (CONFIRMADA, con una advertencia)</h3>
+<p>Churn entre quienes reclamaron: <strong>31,7%</strong>. Entre quienes no: <strong>10,9%</strong>.</p>
+<p><em>Advertencia metodológica:</em> no sabemos si el reclamo se registró antes o después de la decisión de irse. Verificamos que el modelo funciona casi igual de bien sin esta variable, así que la conclusión de negocio se sostiene: <strong>un reclamo es una alerta temprana que merece respuesta inmediata</strong>.</p>
+<h3>❌ H3 — "La inactividad anticipa el churn" (REFUTADA)</h3>
+<p>Esperábamos que los clientes con más días sin comprar estuvieran más cerca de irse. Los datos muestran lo contrario: los que se fueron habían comprado <strong>más recientemente</strong> (mediana 2 días vs. 4 días).</p>
+<p><strong>Lectura de negocio:</strong> muchos clientes hacen una última compra, tienen una mala experiencia y se van enseguida. La señal de riesgo no es el silencio: es <strong>lo que pasa inmediatamente después de una compra</strong> (demora, producto defectuoso, mala atención). La ventana para retener es corta y empieza el día de la compra.</p>
+<h3>❌ H4 — "Baja satisfacción = más churn" (REFUTADA)</h3>
+<p>La hipótesis más intuitiva resultó falsa:</p>
+<table>
+<thead>
+<tr>
+<th>Score de satisfacción</th>
+<th>Tasa de churn</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 (peor)</td>
+<td>11,5%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>17,2%</td>
+</tr>
+<tr>
+<td>5 (mejor)</td>
+<td><strong>23,8%</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Los clientes que puntúan 5 se van <strong>más del doble</strong> que los que puntúan 1. Posibles explicaciones: la encuesta mide la satisfacción con una compra puntual y no la lealtad; o los clientes ya decididos a irse responden por compromiso.</p>
+<p><strong>Decisión que habilita:</strong> no usar la encuesta de satisfacción como tablero de retención. Hoy nos estaría dando una falsa sensación de seguridad exactamente con los clientes que están por irse.</p>
+<h3>⚠️ H5 — El cashback acompaña la retención, pero no es la causa (MATIZADA)</h3>
+<p>Los que se quedan reciben más cashback (mediana $166 vs. $150). Pero el cashback crece con la antigüedad, y la antigüedad es el verdadero factor protector: la correlación no prueba que regalar cashback retenga. <strong>Recomendación:</strong> probarlo con un experimento controlado (a un grupo de riesgo se le da cashback extra, a otro no, y se compara) antes de invertir.</p>
+<hr />
+<h2>3. El sistema de predicción</h2>
+<p>Trabajamos en dos etapas, comparando siempre contra un piso:</p>
+<table>
+<thead>
+<tr>
+<th>Modelo</th>
+<th>¿Detecta a los que se van? (Recall)</th>
+<th>¿Cuántas alarmas son reales? (Precision)</th>
+<th>Calidad global (AUC)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Piso: "nadie se va"</td>
+<td>0%</td>
+<td>—</td>
+<td>0,50</td>
+</tr>
+<tr>
+<td>Modelo simple (Regresión Logística)</td>
+<td>85%</td>
+<td>44%</td>
+<td>0,89</td>
+</tr>
+<tr>
+<td><strong>Modelo final (Random Forest)</strong></td>
+<td><strong>96%</strong></td>
+<td><strong>94%</strong></td>
+<td><strong>0,99</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Tres aclaraciones en lenguaje claro:</p>
+<ul>
+<li><strong>Por qué no usamos "accuracy":</strong> como el 83% de los clientes se queda, un modelo inútil que diga "nadie se va" acierta el 83% de las veces. Por eso medimos <em>de los que se iban, a cuántos detectamos</em> (recall) y <em>de los que señalamos, cuántos eran reales</em> (precision).</li>
+<li><strong>Por qué priorizamos recall:</strong> perder un cliente cuesta mucho más que llamar de más a uno que no se iba. Preferimos alguna falsa alarma antes que dejar pasar un cliente en riesgo.</li>
+<li><strong>Qué es el Random Forest:</strong> cientos de "cuestionarios de preguntas sí/no" sobre el cliente que votan en conjunto. Es como consultar a 300 analistas en vez de a uno.</li>
+</ul>
+<p><strong>Qué variables pesan más en la predicción:</strong> la antigüedad explica por lejos la mayor parte (25% de la importancia), seguida por el cashback recibido, los reclamos, la distancia del depósito al domicilio y los días desde la última compra.</p>
+<p><strong>Honestidad sobre los resultados:</strong> un acierto del 96–99% en datos históricos es excelente, pero en el mundo real va a ser menor. El dataset es una foto de un momento; recomendamos un piloto controlado antes de confiar el presupuesto entero al modelo (ver sección 5).</p>
+<hr />
+<h2>4. De la predicción a la acción</h2>
+<table>
+<thead>
+<tr>
+<th>Acción</th>
+<th>A quién</th>
+<th>Por qué (evidencia)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Programa de onboarding intensivo</strong> (seguimiento activo los primeros 60 días)</td>
+<td>Clientes con &lt; 2 meses</td>
+<td>H1: 51,8% de churn en el primer mes</td>
+</tr>
+<tr>
+<td><strong>Protocolo de reclamo = alerta roja</strong> (respuesta &lt; 24 hs + compensación)</td>
+<td>Cualquier cliente que reclama</td>
+<td>H2: el reclamo casi triplica el churn</td>
+</tr>
+<tr>
+<td><strong>Encuesta post-compra inmediata sobre la experiencia de entrega</strong></td>
+<td>Compradores recientes</td>
+<td>H3: el churn ocurre justo después de una compra</td>
+</tr>
+<tr>
+<td><strong>Lista semanal de riesgo generada por el modelo</strong></td>
+<td>Top de probabilidad de churn</td>
+<td>El modelo detecta 96 de cada 100 que se van</td>
+</tr>
+<tr>
+<td><strong>Experimento A/B de cashback</strong> antes de escalar el beneficio</td>
+<td>Muestra del grupo de riesgo</td>
+<td>H5: la correlación no prueba causalidad</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cuánto está en juego (estimación conservadora):</strong> si el ticket anual promedio de un cliente es $X, los 948 clientes perdidos representan $948·X de facturación anual. Reteniendo solo al 20% de los que el modelo detecta, se recuperan ~180 clientes por ciclo. La bibliografía indica que mejorar 5 puntos la retención puede aumentar las ganancias entre 25% y 95%.</p>
+<hr />
+<h2>5. Limitaciones y próximos pasos</h2>
+<p><strong>Limitaciones que asumimos abiertamente:</strong>
+1. <strong>Foto, no película:</strong> el dataset no tiene fechas; no podemos garantizar que todas las variables se midieron antes del churn (riesgo de "leakage"). Lo mitigamos verificando el modelo sin la variable más sospechosa (reclamos) — sigue funcionando.
+2. <strong>Datos faltantes:</strong> un tercio de los clientes tiene algún dato incompleto; los completamos con valores típicos (medianas).
+3. <strong>Resultados sobre datos históricos:</strong> el rendimiento real se confirma recién en producción.</p>
+<p><strong>Próximos pasos propuestos:</strong>
+1. Piloto de 1 ciclo comercial: el modelo genera la lista de riesgo, el equipo interviene a la mitad (grupo de tratamiento) y a la otra mitad no (control). Se mide el ROI real de la retención.
+2. Incorporar fechas a la captura de datos para eliminar el riesgo de leakage.
+3. Revisar la encuesta de satisfacción (H4 sugiere que hoy no mide lo que creemos).</p>
+<hr />
+<p><em>Las decisiones técnicas, alternativas evaluadas y descartadas están documentadas en <code>decisions.md</code>. Los gráficos de cada hipótesis están en <code>reports/figuras/</code>.</em></p></body></html>
